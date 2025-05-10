@@ -45,12 +45,17 @@ jobs:
           mv openjdk_bundle.${{ matrix.archive }} $OUTPUT_NAME
           echo "OUTPUT_NAME=$OUTPUT_NAME" >> $GITHUB_ENV
 
-      - name: Upload Artifact to Release
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
-          name: ${{ env.OUTPUT_NAME }}
-          path: ${{ env.OUTPUT_NAME }}
-          if-no-files-found: warn
-          compression-level: 6
-          overwrite: false
-          include-hidden-files: false
+          tag_name: v${{ github.event.inputs.jdk_version }}-${{ matrix.platform }}
+          body: "Automated release of OpenJDK ${{ github.event.inputs.jdk_version }} for ${{ matrix.platform }}."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.event.inputs.jdk_version }}-${{ matrix.platform }}
+
