@@ -41,7 +41,7 @@ jobs:
         id: rename_file
         run: |
           # 生成安全的平台名称（替换斜杠为连字符）
-          SAFE_PLATFORM=$(echo "${{ matrix.platform }}" | sed 's/\//-/g')
+          SAFE_PLATFORM=$(echo "${{ matrix.platform }}" | tr '/' '-')
           OUTPUT_NAME=openjdk-${{ github.event.inputs.jdk_version }}-${SAFE_PLATFORM}.${{ matrix.archive }}
           mv openjdk_bundle.${{ matrix.archive }} $OUTPUT_NAME
           echo "OUTPUT_NAME=$OUTPUT_NAME" >> $GITHUB_ENV
@@ -76,7 +76,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ github.event.inputs.jdk_version }}
-          name: "OpenJDK ${{ github.event.inputs.jdk_version }} Release"
+          release_name: "OpenJDK ${{ github.event.inputs.jdk_version }} Release"
           body: |
             Automated release of OpenJDK ${{ github.event.inputs.jdk_version }} for multiple platforms.
             Includes builds for:
