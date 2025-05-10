@@ -64,7 +64,7 @@ jobs:
 
       - name: Extract OpenJDK Binary
         run: |
-          if [[ "${{ matrix.archive }}" == "tar.gz" ]]; then
+          if [ "${{ matrix.archive }}" = "tar.gz" ]; then
             tar -xzf openjdk_bundle.tar.gz -C openjdk
           else
             unzip -q openjdk_bundle.zip -d openjdk
@@ -74,7 +74,7 @@ jobs:
         run: |
           SAFE_PLATFORM=$(echo "${{ matrix.platform }}" | sed 's/\//-/g')
           OUTPUT_NAME=output/openjdk-${{ github.event.inputs.jdk_version }}-${SAFE_PLATFORM}
-          if [[ "${{ matrix.archive }}" == "tar.gz" ]]; then
+          if [ "${{ matrix.archive }}" = "tar.gz" ]; then
             tar -czf ${OUTPUT_NAME}.tar.gz -C openjdk .
           else
             7z a -tzip ${OUTPUT_NAME}.zip ./openjdk/*
