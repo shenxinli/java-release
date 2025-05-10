@@ -53,7 +53,11 @@ jobs:
       - name: Extract OpenJDK Binary
         run: |
           mkdir -p $GITHUB_WORKSPACE/openjdk
-          tar -xzf openjdk.tar.gz -C $GITHUB_WORKSPACE/openjdk
+          if [[ "${{ matrix.archive }}" == "tar.gz" ]]; then
+            tar -xzf openjdk.tar.gz -C $GITHUB_WORKSPACE/openjdk
+          else
+            unzip openjdk.zip -d $GITHUB_WORKSPACE/openjdk
+          fi
 
       - name: Package JDK (Tar/Gz or Zip)
         run: |
