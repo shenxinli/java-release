@@ -1,0 +1,70 @@
+name: Download and Release OpenJDK
+
+on:
+  workflow_dispatch:
+    inputs:
+      jdk_version:
+        description: 'JDK version (11, 17, or 21)'
+        required: true
+        default: '17'
+      platforms:
+        description: 'Comma-separated list of platforms (linux/amd64, linux/arm64, windows/amd64)'
+        required: true
+        default: 'linux/amd64, linux/arm64, windows/amd64'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            archive: tar.gz
+            arch: x64
+            download_url: ${{ github.event.inputs.jdk_version == '11' && 'https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15+10/OpenJDK11U-jdk_x64_linux_11.0.15_10.tar.gz' || github.event.inputs.jdk_version == '17' && 'https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2+8/OpenJDK17U-jdk_x64_linux_17.0.2_8.tar.gz' || github.event.inputs.jdk_version == '21' && 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.0+35/OpenJDK21U-jdk_x64_linux_21.0.0_35.tar.gz' }}
+          - platform: linux/arm64
+            runner: ubuntu-latest
+            archive: tar.gz
+            arch: aarch64
+            download_url: ${{ github.event.inputs.jdk_version == '11' && 'https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15+10/OpenJDK11U-jdk_aarch64_linux_11.0.15_10.tar.gz' || github.event.inputs.jdk_version == '17' && 'https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2+8/OpenJDK17U-jdk_aarch64_linux_17.0.2_8.tar.gz' || github.event.inputs.jdk_version == '21' && 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.0+35/OpenJDK21U-jdk_aarch64_linux_21.0.0_35.tar.gz' }}
+          - platform: windows/amd64
+            runner: windows-latest
+            archive: zip
+            arch: x64
+            download_url: ${{ github.event.inputs.jdk_version == '11' && 'https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15+10/OpenJDK11U-jdk_x64_windows_11.0.15_10.zip' || github.event.inputs.jdk_version == '17' && 'https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2+8/OpenJDK17U-jdk_x64_windows_17.0.2_8.zip' || github.event.inputs.jdk_version == '21' && 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.0+35/OpenJDK21U-jdk_x64_windows_21.0.0_35.zip' }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK (boot JDK)
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: '17'
+          architecture: ${{ matrix.arch }}
+
+      - name: Download JDK Binary from Adoptium
+        run: |
+          echo "Downloading OpenJDK version ${{ inputs.jdk_version }} for platform ${{ matrix.platform }}"
+          curl -L ${{ matrix.download_url }} -o openjdk.tar.gz
+
+      - name: Extract OpenJDK Binary
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/openjdk
+          tar -xzf openjdk.tar.gz -C $GITHUB_WORKSPACE/openjdk
+
+      - name: Package JDK (Tar/Gz or Zip)
+        run: |
+          if [[ "${{ matrix.archive }}" == "tar.gz" ]]; then
+            tar -czf $GITHUB_WORKSPACE/output/openjdk-${{ inputs.jdk_version }}-${{ matrix.platform }}.tar.gz -C $GITHUB_WORKSPACE openjdk
+          else
+            zip -r $GITHUB_WORKSPACE/output/openjdk-${{ inputs.jdk_version }}-${{ matrix.platform }}.zip $GITHUB_WORKSPACE/openjdk
+          fi
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: openjdk-${{ inputs.jdk_version }}-${{ matrix.platform }}
+          path: $GITHUB_WORKSPACE/output/*
