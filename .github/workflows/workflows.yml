@@ -10,11 +10,10 @@ on:
       platforms:
         description: 'Comma-separated list of platforms (linux/amd64, linux/arm64, windows/amd64)'
         required: true
-        default: 'linux/amd64, linux/arm64, windows/amd64'
+        default: 'linux/amd64,linux/arm64,windows/amd64'
 
 jobs:
   build:
-    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
         include:
@@ -34,48 +33,47 @@ jobs:
             arch: x64
             download_url: https://api.adoptium.net/v3/binary/latest/${{ github.event.inputs.jdk_version }}/ga/windows/x64/jdk/hotspot/normal/adoptium
 
+    runs-on: ${{ matrix.runner }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Create workspace folders
-        run: mkdir -p ${{ github.workspace }}/output ${{ github.workspace }}/openjdk
+      - name: Set up JDK (boot JDK)
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: '17'
+          architecture: ${{ matrix.arch }}
+
+      - name: Create Directories
+        run: mkdir -p output openjdk
 
       - name: Download JDK Binary from Adoptium
         run: |
-          echo "Downloading OpenJDK version ${{ inputs.jdk_version }} for ${{ matrix.platform }}"
-          curl -L "${{ matrix.download_url }}" -o openjdk.${{ matrix.archive }}
+          echo "Downloading OpenJDK ${{ github.event.inputs.jdk_version }} for ${{ matrix.platform }}"
+          curl -L ${{ matrix.download_url }} -o openjdk_bundle.${{ matrix.archive }}
 
-      - name: Extract JDK
+      - name: Extract OpenJDK Binary
         run: |
           if [[ "${{ matrix.archive }}" == "tar.gz" ]]; then
-            tar -xzf openjdk.tar.gz -C openjdk
+            tar -xzf openjdk_bundle.tar.gz -C openjdk
           else
-            unzip openjdk.zip -d openjdk
+            unzip -q openjdk_bundle.zip -d openjdk
           fi
 
-      - name: Repackage JDK
+      - name: Repackage OpenJDK
         run: |
-          OUTPUT=output/openjdk-${{ inputs.jdk_version }}-${{ matrix.platform }}
+          SAFE_PLATFORM=$(echo "${{ matrix.platform }}" | sed 's/\//-/g')
+          OUTPUT_NAME=output/openjdk-${{ github.event.inputs.jdk_version }}-${SAFE_PLATFORM}
           if [[ "${{ matrix.archive }}" == "tar.gz" ]]; then
-            tar -czf ${OUTPUT}.tar.gz -C openjdk .
+            tar -czf ${OUTPUT_NAME}.tar.gz -C openjdk .
           else
-            7z a -tzip ${OUTPUT}.zip ./openjdk/*
+            7z a -tzip ${OUTPUT_NAME}.zip ./openjdk/*
           fi
 
-      - name: Generate checksum
-        run: |
-          cd output
-          sha256sum * > SHA256SUMS.txt
-
-      - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: jdk-${{ inputs.jdk_version }}-$(date +%Y%m%d)
-          name: OpenJDK ${{ inputs.jdk_version }} Release $(date +%Y-%m-%d)
-          files: |
-            output/*.tar.gz
-            output/*.zip
-            output/SHA256SUMS.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: openjdk-${{ github.event.inputs.jdk_version }}-${{ matrix.platform }}
+          path: output/*
