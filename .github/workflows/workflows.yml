@@ -46,8 +46,16 @@ jobs:
           java-version: '17'
           architecture: ${{ matrix.arch }}
 
-      - name: Create Directories
-        run: mkdir -p output openjdk
+      - name: Create Directories (Linux/Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p output openjdk
+
+      - name: Create Directories (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          New-Item -ItemType Directory -Force -Path output
+          New-Item -ItemType Directory -Force -Path openjdk
 
       - name: Download JDK Binary from Adoptium
         run: |
