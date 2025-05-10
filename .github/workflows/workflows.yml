@@ -14,84 +14,37 @@ on:
 
 jobs:
   build:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - platform: linux/amd64
-            runner: ubuntu-latest
             archive: tar.gz
-            arch: x64
             download_url: https://api.adoptium.net/v3/binary/latest/${{ github.event.inputs.jdk_version }}/ga/linux/x64/jdk/hotspot/normal/adoptium
           - platform: linux/arm64
-            runner: ubuntu-latest
             archive: tar.gz
-            arch: aarch64
             download_url: https://api.adoptium.net/v3/binary/latest/${{ github.event.inputs.jdk_version }}/ga/linux/aarch64/jdk/hotspot/normal/adoptium
           - platform: windows/amd64
-            runner: windows-latest
             archive: zip
-            arch: x64
             download_url: https://api.adoptium.net/v3/binary/latest/${{ github.event.inputs.jdk_version }}/ga/windows/x64/jdk/hotspot/normal/adoptium
-
-    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Set up JDK (boot JDK)
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: '17'
-          architecture: ${{ matrix.arch }}
-
-      - name: Create Directories (Linux/Ubuntu)
-        if: runner.os == 'Linux'
-        run: |
-          mkdir -p output openjdk
-
-      - name: Create Directories (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          New-Item -ItemType Directory -Force -Path output
-          New-Item -ItemType Directory -Force -Path openjdk
 
       - name: Download JDK Binary from Adoptium
         run: |
           echo "Downloading OpenJDK ${{ github.event.inputs.jdk_version }} for ${{ matrix.platform }}"
           curl -L ${{ matrix.download_url }} -o openjdk_bundle.${{ matrix.archive }}
 
-      - name: Extract OpenJDK Binary (Linux/Ubuntu)
-        if: runner.os == 'Linux'
-        run: |
-          if [ "${{ matrix.archive }}" = "tar.gz" ]; then
-            tar -xzf openjdk_bundle.tar.gz -C openjdk
-          else
-            unzip -q openjdk_bundle.zip -d openjdk
-          fi
-
-      - name: Extract OpenJDK Binary (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          if (${{ matrix.archive }} -eq "tar.gz") {
-            Write-Host "Unsupported for Windows: tar.gz format"
-          } else {
-            Expand-Archive -Path openjdk_bundle.zip -DestinationPath openjdk
-          }
-
-      - name: Repackage OpenJDK
+      - name: Rename JDK Binary for Release
         run: |
           SAFE_PLATFORM=$(echo "${{ matrix.platform }}" | sed 's/\//-/g')
-          OUTPUT_NAME=output/openjdk-${{ github.event.inputs.jdk_version }}-${SAFE_PLATFORM}
-          if [ "${{ matrix.archive }}" = "tar.gz" ]; then
-            tar -czf ${OUTPUT_NAME}.tar.gz -C openjdk .
-          else
-            7z a -tzip ${OUTPUT_NAME}.zip ./openjdk/*
-          fi
+          OUTPUT_NAME=openjdk-${{ github.event.inputs.jdk_version }}-${SAFE_PLATFORM}.${{ matrix.archive }}
+          mv openjdk_bundle.${{ matrix.archive }} $OUTPUT_NAME
 
-      - name: Upload Artifact
+      - name: Upload Artifact to Release
         uses: actions/upload-artifact@v4
         with:
-          name: openjdk-${{ github.event.inputs.jdk_version }}-${{ matrix.platform }}
-          path: output/*
+          name: $OUTPUT_NAME
+          path: $OUTPUT_NAME
