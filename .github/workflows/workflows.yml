@@ -22,18 +22,17 @@ jobs:
             runner: ubuntu-latest
             archive: tar.gz
             arch: x64
-            download_url: ${{ github.event.inputs.jdk_version == '11' && 'https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15+10/OpenJDK11U-jdk_x64_linux_11.0.15_10.tar.gz' || github.event.inputs.jdk_version == '17' && 'https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2+8/OpenJDK17U-jdk_x64_linux_17.0.2_8.tar.gz' || github.event.inputs.jdk_version == '21' && 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.0+35/OpenJDK21U-jdk_x64_linux_21.0.0_35.tar.gz' }}
+            download_url: https://api.adoptium.net/v3/binary/latest/${{ github.event.inputs.jdk_version }}/ga/linux/x64/jdk/hotspot/normal/adoptium
           - platform: linux/arm64
             runner: ubuntu-latest
             archive: tar.gz
             arch: aarch64
-            download_url: ${{ github.event.inputs.jdk_version == '11' && 'https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15+10/OpenJDK11U-jdk_aarch64_linux_11.0.15_10.tar.gz' || github.event.inputs.jdk_version == '17' && 'https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2+8/OpenJDK17U-jdk_aarch64_linux_17.0.2_8.tar.gz' || github.event.inputs.jdk_version == '21' && 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.0+35/OpenJDK21U-jdk_aarch64_linux_21.0.0_35.tar.gz' }}
+            download_url: https://api.adoptium.net/v3/binary/latest/${{ github.event.inputs.jdk_version }}/ga/linux/aarch64/jdk/hotspot/normal/adoptium
           - platform: windows/amd64
             runner: windows-latest
             archive: zip
             arch: x64
-            download_url: ${{ github.event.inputs.jdk_version == '11' && 'https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15+10/OpenJDK11U-jdk_x64_windows_11.0.15_10.zip' || github.event.inputs.jdk_version == '17' && 'https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2+8/OpenJDK17U-jdk_x64_windows_17.0.2_8.zip' || github.event.inputs.jdk_version == '21' && 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.0+35/OpenJDK21U-jdk_x64_windows_21.0.0_35.zip' }}
-
+            download_url: https://api.adoptium.net/v3/binary/latest/${{ github.event.inputs.jdk_version }}/ga/windows/x64/jdk/hotspot/normal/adoptium
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
