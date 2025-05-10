@@ -38,13 +38,19 @@ jobs:
           curl -L ${{ matrix.download_url }} -o openjdk_bundle.${{ matrix.archive }}
 
       - name: Rename JDK Binary for Release
+        id: rename_file
         run: |
           SAFE_PLATFORM=$(echo "${{ matrix.platform }}" | sed 's/\//-/g')
           OUTPUT_NAME=openjdk-${{ github.event.inputs.jdk_version }}-${SAFE_PLATFORM}.${{ matrix.archive }}
           mv openjdk_bundle.${{ matrix.archive }} $OUTPUT_NAME
+          echo "OUTPUT_NAME=$OUTPUT_NAME" >> $GITHUB_ENV
 
       - name: Upload Artifact to Release
         uses: actions/upload-artifact@v4
         with:
-          name: $OUTPUT_NAME
-          path: $OUTPUT_NAME
+          name: ${{ env.OUTPUT_NAME }}
+          path: ${{ env.OUTPUT_NAME }}
+          if-no-files-found: warn
+          compression-level: 6
+          overwrite: false
+          include-hidden-files: false
