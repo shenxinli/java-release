@@ -40,15 +40,18 @@ jobs:
       - name: Rename JDK Binary for Release
         id: rename_file
         run: |
+          # 生成安全的平台名称（替换斜杠为连字符）
           SAFE_PLATFORM=$(echo "${{ matrix.platform }}" | sed 's/\//-/g')
           OUTPUT_NAME=openjdk-${{ github.event.inputs.jdk_version }}-${SAFE_PLATFORM}.${{ matrix.archive }}
           mv openjdk_bundle.${{ matrix.archive }} $OUTPUT_NAME
           echo "OUTPUT_NAME=$OUTPUT_NAME" >> $GITHUB_ENV
+          echo "SAFE_PLATFORM=$SAFE_PLATFORM" >> $GITHUB_ENV  # 保存安全平台名称
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jdk-${{ github.event.inputs.jdk_version }}-${{ matrix.platform }}
+          # 使用安全的平台名称（无斜杠）
+          name: jdk-${{ github.event.inputs.jdk_version }}-${{ env.SAFE_PLATFORM }}
           path: ${{ env.OUTPUT_NAME }}
           retention-days: 5
 
