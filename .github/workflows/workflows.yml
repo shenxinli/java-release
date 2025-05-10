@@ -76,7 +76,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ github.event.inputs.jdk_version }}
-          release_name: "OpenJDK ${{ github.event.inputs.jdk_version }} Release"
+          name: "OpenJDK ${{ github.event.inputs.jdk_version }} Release"
           body: |
             Automated release of OpenJDK ${{ github.event.inputs.jdk_version }} for multiple platforms.
             Includes builds for:
