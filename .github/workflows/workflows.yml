@@ -33,41 +33,49 @@ jobs:
             archive: zip
             arch: x64
             download_url: https://api.adoptium.net/v3/binary/latest/${{ github.event.inputs.jdk_version }}/ga/windows/x64/jdk/hotspot/normal/adoptium
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up JDK (boot JDK)
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: '17'
-          architecture: ${{ matrix.arch }}
+      - name: Create workspace folders
+        run: mkdir -p ${{ github.workspace }}/output ${{ github.workspace }}/openjdk
 
       - name: Download JDK Binary from Adoptium
         run: |
-          echo "Downloading OpenJDK version ${{ inputs.jdk_version }} for platform ${{ matrix.platform }}"
-          curl -L ${{ matrix.download_url }} -o openjdk.tar.gz
+          echo "Downloading OpenJDK version ${{ inputs.jdk_version }} for ${{ matrix.platform }}"
+          curl -L "${{ matrix.download_url }}" -o openjdk.${{ matrix.archive }}
 
-      - name: Extract OpenJDK Binary
-        run: |
-          mkdir -p $GITHUB_WORKSPACE/openjdk
-          if [[ "${{ matrix.archive }}" == "tar.gz" ]]; then
-            tar -xzf openjdk.tar.gz -C $GITHUB_WORKSPACE/openjdk
-          else
-            unzip openjdk.zip -d $GITHUB_WORKSPACE/openjdk
-          fi
-
-      - name: Package JDK (Tar/Gz or Zip)
+      - name: Extract JDK
         run: |
           if [[ "${{ matrix.archive }}" == "tar.gz" ]]; then
-            tar -czf $GITHUB_WORKSPACE/output/openjdk-${{ inputs.jdk_version }}-${{ matrix.platform }}.tar.gz -C $GITHUB_WORKSPACE openjdk
+            tar -xzf openjdk.tar.gz -C openjdk
           else
-            zip -r $GITHUB_WORKSPACE/output/openjdk-${{ inputs.jdk_version }}-${{ matrix.platform }}.zip $GITHUB_WORKSPACE/openjdk
+            unzip openjdk.zip -d openjdk
           fi
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Repackage JDK
+        run: |
+          OUTPUT=output/openjdk-${{ inputs.jdk_version }}-${{ matrix.platform }}
+          if [[ "${{ matrix.archive }}" == "tar.gz" ]]; then
+            tar -czf ${OUTPUT}.tar.gz -C openjdk .
+          else
+            7z a -tzip ${OUTPUT}.zip ./openjdk/*
+          fi
+
+      - name: Generate checksum
+        run: |
+          cd output
+          sha256sum * > SHA256SUMS.txt
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
         with:
-          name: openjdk-${{ inputs.jdk_version }}-${{ matrix.platform }}
-          path: $GITHUB_WORKSPACE/output/*
+          tag_name: jdk-${{ inputs.jdk_version }}-$(date +%Y%m%d)
+          name: OpenJDK ${{ inputs.jdk_version }} Release $(date +%Y-%m-%d)
+          files: |
+            output/*.tar.gz
+            output/*.zip
+            output/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
