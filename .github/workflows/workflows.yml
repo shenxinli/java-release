@@ -62,13 +62,23 @@ jobs:
           echo "Downloading OpenJDK ${{ github.event.inputs.jdk_version }} for ${{ matrix.platform }}"
           curl -L ${{ matrix.download_url }} -o openjdk_bundle.${{ matrix.archive }}
 
-      - name: Extract OpenJDK Binary
+      - name: Extract OpenJDK Binary (Linux/Ubuntu)
+        if: runner.os == 'Linux'
         run: |
           if [ "${{ matrix.archive }}" = "tar.gz" ]; then
             tar -xzf openjdk_bundle.tar.gz -C openjdk
           else
             unzip -q openjdk_bundle.zip -d openjdk
           fi
+
+      - name: Extract OpenJDK Binary (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          if (${{ matrix.archive }} -eq "tar.gz") {
+            Write-Host "Unsupported for Windows: tar.gz format"
+          } else {
+            Expand-Archive -Path openjdk_bundle.zip -DestinationPath openjdk
+          }
 
       - name: Repackage OpenJDK
         run: |
