@@ -8,9 +8,9 @@ on:
         required: true
         default: '17'
       platforms:
-        description: 'Comma-separated list of platforms (linux/amd64, linux/arm64, windows/amd64)'
+        description: 'Comma-separated list of platforms (linux/amd64, linux/arm64, windows/x64)'
         required: true
-        default: 'linux/amd64,linux/arm64,windows/amd64'
+        default: 'linux/amd64,linux/arm64,windows/x64'
 
 jobs:
   build:
@@ -24,7 +24,7 @@ jobs:
           - platform: linux/arm64
             archive: tar.gz
             download_url: https://api.adoptium.net/v3/binary/latest/${{ github.event.inputs.jdk_version }}/ga/linux/aarch64/jdk/hotspot/normal/adoptium
-          - platform: windows/amd64
+          - platform: windows/x64
             archive: zip
             download_url: https://api.adoptium.net/v3/binary/latest/${{ github.event.inputs.jdk_version }}/ga/windows/x64/jdk/hotspot/normal/adoptium
 
